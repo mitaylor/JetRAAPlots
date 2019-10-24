@@ -34,11 +34,12 @@ int main(int argc, char *argv[])
 
    while(InFile04 && InFile08)
    {
-      double PT = 0;
-      InFile04 >> PT;
-      InFile08 >> PT;
+      double PTMin = 0;
+      double PTMax = 0;
+      InFile04 >> PTMin >> PTMax;
+      InFile08 >> PTMin >> PTMax;
 
-      if(PT < 1)
+      if(PTMin < 1 || PTMax < 1)
          continue;
 
       double R04, RMin04, RMax04;
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
       double R08, RMin08, RMax08;
       InFile08 >> R08 >> RMax08 >> RMin08;
       
-      OutFile << PT << " " << PT << " ";
+      OutFile << PTMin << " " << PTMax << " ";
       OutFile << "1 1 1 ";
       OutFile << "0 0 0 ";
       OutFile << R04 << " " << RMax04 << " " << RMin04 << " ";

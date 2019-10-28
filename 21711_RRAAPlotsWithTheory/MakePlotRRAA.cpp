@@ -152,12 +152,12 @@ int main(int argc, char *argv[])
    Latex.SetTextAngle(0);
    string TypeTag = "";
    if(DoData)               TypeTag = "CMS";
-   if(DoTheory && !DoData)  TypeTag += "Theory";
-   if(DoJewel && !DoData)   TypeTag += "Jewel";
-   if(DoPyquen && !DoData)  TypeTag += "Pyquen";
-   if(DoHybrid && !DoData)  TypeTag += "Hybrid";
-   if(DoIvan && !DoData)    TypeTag += "Li and Vitev";
-   if(DoSCET && !DoData)    TypeTag += "SCET";
+   if(DoTheory && !DoData)  TypeTag = "Theory";
+   if(DoJewel && !DoData)   TypeTag = "Jewel";
+   if(DoPyquen && !DoData)  TypeTag = "Pyquen";
+   if(DoHybrid && !DoData)  TypeTag = "Hybrid";
+   if(DoIvan && !DoData)    TypeTag = "Li and Vitev";
+   if(DoSCET && !DoData)    TypeTag = "SCET";
    Latex.DrawLatex(PadX0, PadY0 + PadDY * 2 + PadY0 * 0.15, TypeTag.c_str());
 
    Latex.SetTextFont(42);
@@ -242,8 +242,8 @@ int main(int argc, char *argv[])
    vector<TGraphAsymmErrors> KorinnaNoRecoilC03 = GetTheory("Theory/Korinna/JewelData_PbPbNoRecoil_50to90_RRAA.txt", kBlue - 5);
 //   vector<TGraphAsymmErrors> PyquenB0 = GetTheory("Theory/Pyquen/PyquenData_PbPb_RRAA.txt", kBlue);
 //   vector<TGraphAsymmErrors> PyquenWideRadB0 = GetTheory("Theory/Pyquen/PyquenData_PbPbWide_RRAA.txt", kViolet + 5);
-   vector<TGraphAsymmErrors> PyquenC00 = GetTheory("Theory/Pyquen/PyquenData_PbPb_0to10_RRAA.txt", kTeal + 5);
-   vector<TGraphAsymmErrors> PyquenWideRadC00 = GetTheory("Theory/Pyquen/PyquenData_PbPbWide_0to10_RRAA.txt", kTeal + 3);
+   vector<TGraphAsymmErrors> PyquenC00 = GetTheory("Theory/Pyquen/PyquenTest_PbPb350_0to10_RRAA.txt", kTeal + 5);
+   vector<TGraphAsymmErrors> PyquenWideRadC00 = GetTheory("Theory/Pyquen/PyquenTest_PbPbWide350_0to10_RRAA.txt", kTeal + 3);
    vector<TGraphAsymmErrors> IvanC00 = GetTheory("Theory/Ivan/RRAA_Centrality-0-10.txt", kBlue); // Only R = 02, 04, 08
    vector<TGraphAsymmErrors> IvanC01 = GetTheory("Theory/Ivan/RRAA_Centrality-10-30.txt", kGreen + 1);// Only R = 02, 04, 08
    vector<TGraphAsymmErrors> IvanC02 = GetTheory("Theory/Ivan/RRAA_Centrality-30-50.txt", kGreen + 3);// Only R = 02, 04, 08

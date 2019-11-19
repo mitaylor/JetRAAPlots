@@ -34,31 +34,39 @@ int Color[5] = {-1, -1, -1, -1, -1};
 
 int main(int argc, char *argv[]);
 void SetPad(TPad &P);
-void SetAxis(TGaxis &A);
+void SetAxis(TGaxis &A, bool Pres);
 void GetRAA(TH1D &H, string FileName, int R, int C, bool Sys = false);
 void Rebin(TH1D &H1, TH1D &H2);
-void DrawLumiTAA(double Lumi, double TAA[4], double XMin, double XMax);
+void DrawLumiTAA(double Lumi, double TAA[4], double XMin, double XMax, string type);
 vector<TGraphAsymmErrors> GetTheoryGraphs(string TheoryFileName, int BaseColor);
 
 int main(int argc, char *argv[])
 {
    CommandLine CL(argc, argv);
 
-   string TheoryType = CL.Get("TheoryType", ""); // "", "All", "Jewel", "Pyquen", "Hybrid", "Ivan", "SCET"
+   string TheoryType = CL.Get("TheoryType", ""); // "", "All", "Generators", "MC", "Calculations", "LBT", "None"
    bool DoData = CL.GetBool("Data", true);
-   bool DoTheory = (TheoryType == "All");
-   bool DoJewel = (TheoryType == "Jewel");
-   bool DoPyquen = (TheoryType == "Pyquen");
-   bool DoHybrid = (TheoryType == "Hybrid");
-   bool DoIvan = (TheoryType == "Ivan");
-   bool DoSCET = (TheoryType == "SCET");
-   bool OnlyData = DoData && !DoTheory && !DoJewel && !DoPyquen && !DoHybrid && !DoIvan && !DoSCET;
+   bool Pres = CL.GetBool("Pres", true);
+   bool Prelim = CL.GetBool("Prelim", true);
+   
+   bool Do0to10All = (TheoryType == "All");
+   bool Do0to10Gen = (TheoryType == "Generators");      // Jewel, Pyquen
+   bool Do0to10MC = (TheoryType == "MC");               // Hybrid, Martini, LBT
+   bool Do0to10Calc = (TheoryType == "Calculations");   // Ivan, Felix, Yang-Ting, Yacine
+   
+   bool Do0to10 = Do0to10All || Do0to10Gen || Do0to10MC || Do0to10Calc;
+   bool Do10to30 = (TheoryType == "10to30");            // Ivan, Jewel, Martini
+   bool Do30to50 = (TheoryType == "30to50");            // Ivan, Jewel, Martini
+   bool Do50to90 = (TheoryType == "50to90");            // Jewel
+   
+   bool DoTheory = Do0to10 || Do10to30 || Do30to50 || Do50to90;
+   bool OnlyData = DoData && !DoTheory;
 
    // Preamble: sizing
    int PanelSize = 500;
-   int PaddingWidthL = 100;
+   int PaddingWidthL = Pres ? 140 : 100;
    int PaddingWidthR = 50;
-   int PaddingHeight = 100;
+   int PaddingHeight = Pres ? 130 : 100;
    int CanvasWidth = PanelSize * 3 + PaddingWidthL + PaddingWidthR;
    int CanvasHeight = PanelSize * 2 + PaddingHeight * 2;
 
@@ -75,9 +83,7 @@ int main(int argc, char *argv[])
    string File = "RAA_Smooth.root";
 
    double Lumi = 0.023;
-   double TAAFull[4] = {0.018646, 0.025341, 0.051233, 0.100719};
-   double TAATheory[4] = {0.018646, -1, -1, -1};
-   double *TAA = (OnlyData ? TAAFull: TAATheory);
+   double TAA[4] = {0.018646, 0.025341, 0.051233, 0.100719};
 
    // Start declaring canvas, pad, axis, and axis title (as TLatex)
    TCanvas Canvas("Canvas", "", CanvasWidth, CanvasHeight);
@@ -109,43 +115,43 @@ int main(int argc, char *argv[])
    TGaxis AxisY1(PadX0 + PadDX * 0, PadY0 + PadDY * 0, PadX0 + PadDX * 0, PadY0 + PadDY * 1, YMin, YMax, 510, "");
    TGaxis AxisY2(PadX0 + PadDX * 0, PadY0 + PadDY * 1, PadX0 + PadDX * 0, PadY0 + PadDY * 2, YMin, YMax, 510, "");
 
-   SetAxis(AxisX1);
-   SetAxis(AxisX2);
-   SetAxis(AxisX3);
-   SetAxis(AxisY1);
-   SetAxis(AxisY2);
+   SetAxis(AxisX1, Pres);
+   SetAxis(AxisX2, Pres);
+   SetAxis(AxisX3, Pres);
+   SetAxis(AxisY1, Pres);
+   SetAxis(AxisY2, Pres);
 
    TLatex Latex;
    Latex.SetNDC();
 
    Latex.SetTextFont(42);
-   Latex.SetTextSize(0.030);
+   if(Pres) Latex.SetTextSize(0.045);
+   else     Latex.SetTextSize(0.030);
    Latex.SetTextAlign(22);
    Latex.SetTextAngle(0);
-   Latex.DrawLatex(PadX0 + PadDX * 1.5, PadY0 * 0.20, "Jet p_{T} (GeV)");
+   Latex.DrawLatex(PadX0 + PadDX * 1.5, PadY0 * 0.28, "p_{T}^{jet} (GeV)");
 
    Latex.SetTextFont(42);
-   Latex.SetTextSize(0.030);
+   if(Pres) Latex.SetTextSize(0.045);
+   else     Latex.SetTextSize(0.030);
    Latex.SetTextAlign(22);
    Latex.SetTextAngle(90);
    Latex.DrawLatex(PadX0 * 0.20, PadY0 + PadDY, "R_{AA}");
 
    Latex.SetTextFont(62);
-   Latex.SetTextSize(0.035);
+   if(Pres) Latex.SetTextSize(0.045);
+   else     Latex.SetTextSize(0.035);
    Latex.SetTextAlign(11);
    Latex.SetTextAngle(0);
    string TypeTag = "";
    if(DoData)               TypeTag = "CMS";
+   if(Prelim)               TypeTag += " #scale[0.8]{#font[52]{Preliminary}}";
    if(DoTheory && !DoData)  TypeTag = "Theory";
-   if(DoJewel && !DoData)   TypeTag = "Jewel";
-   if(DoPyquen && !DoData)  TypeTag = "Pyquen";
-   if(DoHybrid && !DoData)  TypeTag = "Hybrid";
-   if(DoIvan && !DoData)    TypeTag = "Li and Vitev";
-   if(DoSCET && !DoData)    TypeTag = "SCET";
    Latex.DrawLatex(PadX0, PadY0 + PadDY * 2 + PadY0 * 0.15, TypeTag.c_str());
 
    Latex.SetTextFont(42);
-   Latex.SetTextSize(0.030);
+   if(Pres) Latex.SetTextSize(0.035);
+   else     Latex.SetTextSize(0.030);
    Latex.SetTextAlign(31);
    Latex.SetTextAngle(0);
    if(DoData) Latex.DrawLatex(PadX0 + PadDX * 3, PadY0 + PadDY * 2 + PadY0 * 0.15, "#sqrt{s_{NN}} = 5.02 TeV, PbPb 404 #mub^{-1}, pp 27.4 pb^{-1}");
@@ -217,24 +223,31 @@ int main(int argc, char *argv[])
    HC03RAASys[5] = TH1D("HR10C03RAASys", "", 5, Bins);   GetRAA(HC03RAASys[5], File, R10, C3, true);
 
    vector<TGraphAsymmErrors> Felix = GetTheoryGraphs("Theory/Felix/FelixRAA.txt", kBlack);
-   vector<TGraphAsymmErrors> DanielWake = GetTheoryGraphs("Theory/Daniel/ForCMS/RAA_vs_R/Daniel_wake.txt", kMagenta);
-   vector<TGraphAsymmErrors> DanielOnlyPos = GetTheoryGraphs("Theory/Daniel/ForCMS/RAA_vs_R/Daniel_onlypos.txt", kPink - 2);
-   vector<TGraphAsymmErrors> DanielNoWake = GetTheoryGraphs("Theory/Daniel/ForCMS/RAA_vs_R/Daniel_nowake.txt", kOrange);
-   vector<TGraphAsymmErrors> KorinnaC00 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPb_0to10_RAA.txt", kOrange - 3);
-   vector<TGraphAsymmErrors> KorinnaC01 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPb_10to30_RAA.txt", kRed - 7);
-   vector<TGraphAsymmErrors> KorinnaC02 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPb_30to50_RAA.txt", kPink - 9);
-   vector<TGraphAsymmErrors> KorinnaC03 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPb_50to90_RAA.txt", kPink - 6);
-   vector<TGraphAsymmErrors> KorinnaNoRecoilC00 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPbNoRecoil_0to10_RAA.txt", kMagenta + 2);
+   vector<TGraphAsymmErrors> DanielWake = GetTheoryGraphs("Theory/Daniel/ForCMS/RAA_vs_R/Daniel_wake.txt", kOrange + 10);
+   vector<TGraphAsymmErrors> DanielOnlyPos = GetTheoryGraphs("Theory/Daniel/ForCMS/RAA_vs_R/Daniel_onlypos.txt", kOrange);
+   vector<TGraphAsymmErrors> DanielNoWake = GetTheoryGraphs("Theory/Daniel/ForCMS/RAA_vs_R/Daniel_nowake.txt", kOrange + 4);
+   vector<TGraphAsymmErrors> KorinnaC00 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPb_0to10_RAA.txt", kPink + 1);
+   vector<TGraphAsymmErrors> KorinnaC01 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPb_10to30_RAA.txt", kPink + 1);
+   vector<TGraphAsymmErrors> KorinnaC02 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPb_30to50_RAA.txt", kPink + 1);
+   vector<TGraphAsymmErrors> KorinnaC03 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPb_50to90_RAA.txt", kPink + 1);
+   vector<TGraphAsymmErrors> KorinnaNoRecoilC00 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPbNoRecoil_0to10_RAA.txt", kMagenta);
    vector<TGraphAsymmErrors> KorinnaNoRecoilC01 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPbNoRecoil_10to30_RAA.txt", kMagenta);
-   vector<TGraphAsymmErrors> KorinnaNoRecoilC02 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPbNoRecoil_30to50_RAA.txt", kViolet + 1);
-   vector<TGraphAsymmErrors> KorinnaNoRecoilC03 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPbNoRecoil_50to90_RAA.txt", kBlue - 5);
-   vector<TGraphAsymmErrors> PyquenC00 = GetTheoryGraphs("Theory/Pyquen/PyquenTest_PbPb350_0to10_RAA.txt", kTeal + 5);
-   vector<TGraphAsymmErrors> PyquenWideRadC00 = GetTheoryGraphs("Theory/Pyquen/PyquenTest_PbPbWide350_0to10_RAA.txt", kTeal + 3);
+   vector<TGraphAsymmErrors> KorinnaNoRecoilC02 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPbNoRecoil_30to50_RAA.txt", kMagenta);
+   vector<TGraphAsymmErrors> KorinnaNoRecoilC03 = GetTheoryGraphs("Theory/Korinna/JewelData_PbPbNoRecoil_50to90_RAA.txt", kMagenta);
+   vector<TGraphAsymmErrors> PyquenC00 = GetTheoryGraphs("Theory/Pyquen/PyquenTest_PbPb350_0to10_RAA.txt", kCyan + 3);
+   vector<TGraphAsymmErrors> PyquenWideRadC00 = GetTheoryGraphs("Theory/Pyquen/PyquenTest_PbPbWide350_0to10_RAA.txt", kCyan - 6);
    vector<TGraphAsymmErrors> IvanC00 = GetTheoryGraphs("Theory/Ivan/RAA_Centrality-0-10.txt", kBlue); // Only R = 02, 04, 08
-   vector<TGraphAsymmErrors> IvanC01 = GetTheoryGraphs("Theory/Ivan/RAA_Centrality-10-30.txt", kGreen + 1);// Only R = 02, 04, 08
-   vector<TGraphAsymmErrors> IvanC02 = GetTheoryGraphs("Theory/Ivan/RAA_Centrality-30-50.txt", kGreen + 3);// Only R = 02, 04, 08
-   vector<TGraphAsymmErrors> SCET = GetTheoryGraphs("Theory/SCET/SCET_RAA.txt", kCyan + 1);// Only R = 02, 04, 06, 08, 10
-   
+   vector<TGraphAsymmErrors> IvanC01 = GetTheoryGraphs("Theory/Ivan/RAA_Centrality-10-30.txt", kBlue); // Only R = 02, 04, 08
+   vector<TGraphAsymmErrors> IvanC02 = GetTheoryGraphs("Theory/Ivan/RAA_Centrality-30-50.txt", kBlue); // Only R = 02, 04, 08
+   vector<TGraphAsymmErrors> SCET = GetTheoryGraphs("Theory/SCET/SCET_RAA.txt", kAzure + 7); // Only R = 02, 04, 06, 08, 10
+   vector<TGraphAsymmErrors> MartiniC00 = GetTheoryGraphs("Theory/Martini/MARTINI_RAA_0to10.txt", kViolet - 3);
+   vector<TGraphAsymmErrors> MartiniC01 = GetTheoryGraphs("Theory/Martini/MARTINI_RAA_10to30.txt", kViolet - 3);
+   vector<TGraphAsymmErrors> MartiniC02 = GetTheoryGraphs("Theory/Martini/MARTINI_RAA_30to50.txt", kViolet - 3);
+   vector<TGraphAsymmErrors> LBTNoResponse = GetTheoryGraphs("Theory/LBT/RAA_showers_only.txt", kSpring - 6); // Only R = 02, 04, 06, 08, 10
+   vector<TGraphAsymmErrors> LBTResponse = GetTheoryGraphs("Theory/LBT/RAA_with_recoil_and_back_reaction.txt", kSpring + 5); // Only R = 02, 04, 06, 08, 10
+   vector<TGraphAsymmErrors> Yacine = GetTheoryGraphs("Theory/Yacine/RAA.txt", kOrange + 1); // Only R = 02, 04, 06, 08, 10
+   vector<TGraphAsymmErrors> CCNUHydro = GetTheoryGraphs("Theory/CCNU/RAA_hydro.txt", kBlue - 7);
+   vector<TGraphAsymmErrors> CCNUNoHydro = GetTheoryGraphs("Theory/CCNU/RAA_no_hydro.txt", kViolet + 2);
 
    // For data-only plot.
    TLegend LegendDataOnly1(0.1, 0.08, 0.5, 0.28);
@@ -247,7 +260,7 @@ int main(int argc, char *argv[])
 
    TLegend LegendDataOnly2(0.45, 0.08, 0.85, 0.28);
    LegendDataOnly2.SetTextFont(42);
-   LegendDataOnly2.SetTextSize(0.07);
+   LegendDataOnly2.SetTextSize(0.08);
    LegendDataOnly2.SetFillStyle(0);
    LegendDataOnly2.SetBorderSize(0);
    LegendDataOnly2.AddEntry(&HC00RAA[0], "T_{AA}", "f");
@@ -280,296 +293,338 @@ int main(int argc, char *argv[])
    LegendDataOnly5.AddEntry(&HLumi, "Lumi", "f");
    LegendDataOnly5.AddEntry("", "", "");
 
-   // For theory-data plot.
-   TLegend LegendTheory1(0.55, 0.05, 1.0, 0.23);
+   // For all theory-data plots.
+   double LegendStart = Pres ? 0.7 : 0.55;
+   TLegend LegendTheoryData(LegendStart, 0.03, LegendStart+0.4, 0.23);
+   LegendTheoryData.SetTextFont(42);
+   LegendTheoryData.SetTextSize(0.07);
+   LegendTheoryData.SetFillStyle(0);
+   LegendTheoryData.SetBorderSize(0);
+   if(Do0to10)  LegendTheoryData.AddEntry(&HC00RAA[0], "T_{AA}", "f");
+   if(Do10to30) LegendTheoryData.AddEntry(&HC01RAA[0], "T_{AA}", "f");
+   if(Do30to50) LegendTheoryData.AddEntry(&HC02RAA[0], "T_{AA}", "f");
+   if(Do50to90) LegendTheoryData.AddEntry(&HC03RAA[0], "T_{AA}", "f");
+   LegendTheoryData.AddEntry(&HLumi, "Lumi", "f");
+
+   // For all theory plots except the grand compilation.
+   TLegend LegendTheory1(0.07, 0.03, 0.48, 0.25);
    LegendTheory1.SetTextFont(42);
    LegendTheory1.SetTextSize(0.07);
    LegendTheory1.SetFillStyle(0);
    LegendTheory1.SetBorderSize(0);
-   LegendTheory1.AddEntry(&HC00RAA[0], "T_{AA}", "f");
-   LegendTheory1.AddEntry(&HLumi, "Lumi", "f");
+   if(Do0to10Calc && DoData)     LegendTheory1.AddEntry("", "", "");
+   if(Do0to10Calc && DoData)     LegendTheory1.AddEntry(&HC00RAASys[0], "CMS", "plf");
+   if(Do0to10Calc && !DoData)    LegendTheory1.AddEntry(&Felix[0], "Factorization", "f");
+   if(Do0to10Calc && !DoData)    LegendTheory1.AddEntry(&SCET[0], "SCET w/o coll. E-loss", "f");
+   if(Do0to10Calc)               LegendTheory1.AddEntry(&IvanC00[0], "Li and Vitev", "f");
+   if(Do0to10MC)                 LegendTheory1.AddEntry("", "", "");
+   if(Do0to10MC && !DoData)      LegendTheory1.AddEntry("", "", "");
+   if(Do0to10MC && DoData)       LegendTheory1.AddEntry(&HC00RAASys[0], "CMS", "plf");
+   if(Do0to10MC && DoData)       LegendTheory1.AddEntry(&MartiniC00[0], "MARTINI", "f");
+   if(Do0to10Gen && DoData)      LegendTheory1.AddEntry(&HC00RAASys[0], "CMS", "plf");
+   if(Do0to10Gen)                LegendTheory1.AddEntry(&KorinnaC00[0], "JEWEL", "f");
+   if(Do0to10Gen)                LegendTheory1.AddEntry(&KorinnaNoRecoilC00[0], "JEWEL w/o recoil", "f");
+   if(Do10to30 && DoData)        LegendTheory1.AddEntry(&HC01RAASys[0], "CMS", "plf");
+   if(Do10to30 && !DoData)       LegendTheory1.AddEntry("", "", "");
+   if(Do10to30)                  LegendTheory1.AddEntry(&KorinnaC01[0], "JEWEL", "f");
+   if(Do10to30)                  LegendTheory1.AddEntry(&KorinnaNoRecoilC01[0], "JEWEL w/o recoil", "f");
+   if(Do30to50 && DoData)        LegendTheory1.AddEntry(&HC02RAASys[0], "CMS", "plf");
+   if(Do30to50 && !DoData)       LegendTheory1.AddEntry("", "", "");
+   if(Do30to50)                  LegendTheory1.AddEntry(&KorinnaC02[0], "JEWEL", "f");
+   if(Do30to50)                  LegendTheory1.AddEntry(&KorinnaNoRecoilC02[0], "JEWEL w/o recoil", "f");
+   if(Do50to90 && DoData)        LegendTheory1.AddEntry(&HC03RAASys[0], "CMS", "plf");
+   if(Do50to90 && !DoData)       LegendTheory1.AddEntry("", "", "");
+   if(Do50to90)                  LegendTheory1.AddEntry(&KorinnaC03[0], "JEWEL", "f");
+   if(Do50to90)                  LegendTheory1.AddEntry(&KorinnaNoRecoilC03[0], "JEWEL w/o recoil", "f");
    
    TLegend LegendTheory2(0.07, 0.03, 0.48, 0.25);
    LegendTheory2.SetTextFont(42);
-   LegendTheory2.SetTextSize(0.06);
+   LegendTheory2.SetTextSize(0.07);
    LegendTheory2.SetFillStyle(0);
    LegendTheory2.SetBorderSize(0);
-   LegendTheory2.AddEntry(&HC00RAASys[0], "CMS 0-10%", "plf");
-   LegendTheory2.AddEntry(&IvanC00[0], "Li and Vitev", "f");
-   LegendTheory2.AddEntry(&Felix[0], "Factorization", "f");
+   if(Do0to10Calc)               LegendTheory2.AddEntry(&Yacine[0], "Coherent antenna BDMPS", "lf");
+   if(Do0to10Calc && DoData)     LegendTheory2.AddEntry(&Felix[0], "Factorization", "f");
+   if(Do0to10Calc && DoData)     LegendTheory2.AddEntry(&SCET[0], "SCET w/o coll. E-loss", "f");
+   if(Do0to10Calc && !DoData)    LegendTheory2.AddEntry("", "", "");
+   if(Do0to10Calc && !DoData)    LegendTheory2.AddEntry("", "", "");
+   if(Do0to10MC)       LegendTheory2.AddEntry(&DanielWake[0], "HYBRID w/ wake", "lf");
+   if(Do0to10MC)       LegendTheory2.AddEntry(&DanielNoWake[0], "HYBRID w/o wake", "lf");
+   if(Do0to10MC)       LegendTheory2.AddEntry(&DanielOnlyPos[0], "HYBRID w/ pos wake", "lf");
+   if(Do0to10Gen)      LegendTheory2.AddEntry("", "", "");
+   if(Do0to10Gen)      LegendTheory2.AddEntry(&PyquenC00[0], "PYQUEN", "f");
+   if(Do0to10Gen)      LegendTheory2.AddEntry(&PyquenWideRadC00[0], "PYQUEN w/ wide rad.", "f");
+   if(Do10to30)        LegendTheory2.AddEntry("", "", "");
+   if(Do10to30)        LegendTheory2.AddEntry(&IvanC01[0], "Li and Vitev", "f");
+   if(Do10to30)        LegendTheory2.AddEntry(&MartiniC01[0], "MARTINI", "f");
+   if(Do30to50)        LegendTheory2.AddEntry("", "", "");
+   if(Do30to50)        LegendTheory2.AddEntry(&IvanC02[0], "Li and Vitev", "f");
+   if(Do30to50)        LegendTheory2.AddEntry(&MartiniC02[0], "MARTINI", "f");
    
-   TLegend LegendTheory3(0.50, 0.03, 0.91, 0.25);
+   
+   TLegend LegendTheory3(0.07, 0.03, 0.48, 0.25);
    LegendTheory3.SetTextFont(42);
-   LegendTheory3.SetTextSize(0.06);
+   LegendTheory3.SetTextSize(0.07);
    LegendTheory3.SetFillStyle(0);
    LegendTheory3.SetBorderSize(0);
    LegendTheory3.AddEntry("", "", "");
-   LegendTheory3.AddEntry(&KorinnaC00[0], "Jewel", "f");
-   LegendTheory3.AddEntry(&KorinnaNoRecoilC00[0], "Jewel w/o recoil", "f");
-   
+   LegendTheory3.AddEntry(&LBTNoResponse[0], "LBT w/ showers only", "lf");
+   LegendTheory3.AddEntry(&LBTResponse[0], "LBT w/ med. response", "lf");
+
    TLegend LegendTheory4(0.07, 0.03, 0.48, 0.25);
    LegendTheory4.SetTextFont(42);
    LegendTheory4.SetTextSize(0.06);
    LegendTheory4.SetFillStyle(0);
    LegendTheory4.SetBorderSize(0);
-   LegendTheory4.AddEntry(&DanielWake[0], "Hybrid w/ wake", "f");
-   LegendTheory4.AddEntry(&DanielNoWake[0], "Hybrid w/o wake", "f");
-   LegendTheory4.AddEntry(&DanielOnlyPos[0], "Hybrid w/ partial response", "f");
+   LegendTheory4.AddEntry("", "", "");
+   LegendTheory4.AddEntry(&CCNUHydro[0], "CCNU coupled jet-fluid w/ hydro", "pl");
+   LegendTheory4.AddEntry(&CCNUNoHydro[0], "CCNU coupled jet-fluid w/o hydro", "pl");
 
-   TLegend LegendTheory5(0.07, 0.03, 0.48, 0.25);
-   LegendTheory5.SetTextFont(42);
-   LegendTheory5.SetTextSize(0.06);
-   LegendTheory5.SetFillStyle(0);
-   LegendTheory5.SetBorderSize(0);
-   LegendTheory5.AddEntry("", "", "");
-   LegendTheory5.AddEntry(&PyquenC00[0], "Pyquen", "f");
-   LegendTheory5.AddEntry(&PyquenWideRadC00[0], "Pyquen w/ wide rad.", "f");
+   // For the theory grand compilation.
+   TLegend LegendTheoryAll1(0.07, 0.03, 0.47, 0.23);
+   LegendTheoryAll1.SetTextFont(42);
+   LegendTheoryAll1.SetTextSize(0.07);
+   LegendTheoryAll1.SetFillStyle(0);
+   LegendTheoryAll1.SetBorderSize(0);
+   LegendTheoryAll1.AddEntry(&HC00RAA[0], "T_{AA}", "f");
+   LegendTheoryAll1.AddEntry(&HLumi, "Lumi", "f");
    
-   TLegend LegendTheory6(0.07, 0.03, 0.48, 0.25);
-   LegendTheory6.SetTextFont(42);
-   LegendTheory6.SetTextSize(0.06);
-   LegendTheory6.SetFillStyle(0);
-   LegendTheory6.SetBorderSize(0);
-   LegendTheory6.AddEntry("", "", "");
-   LegendTheory6.AddEntry("", "", "");
-   LegendTheory6.AddEntry(&SCET[0], "SCET w/o coll. E-loss", "f");
-
-   // For theory-only plot.
-   TLegend LegendTheoryOnly1(0.55, 0.03, 0.95, 0.25);
-   LegendTheoryOnly1.SetTextFont(42);
-   LegendTheoryOnly1.SetTextSize(0.06);
-   LegendTheoryOnly1.SetFillStyle(0);
-   LegendTheoryOnly1.SetBorderSize(0);
-   LegendTheoryOnly1.AddEntry("", "", "");
-   LegendTheoryOnly1.AddEntry(&IvanC00[0], "Li and Vitev", "f");
-   LegendTheoryOnly1.AddEntry(&Felix[0], "Factorization", "f");
    
-   TLegend LegendTheoryOnly2(0.07, 0.03, 0.47, 0.25);
-   LegendTheoryOnly2.SetTextFont(42);
-   LegendTheoryOnly2.SetTextSize(0.06);
-   LegendTheoryOnly2.SetFillStyle(0);
-   LegendTheoryOnly2.SetBorderSize(0);
-   LegendTheoryOnly2.AddEntry(&KorinnaC00[0], "Jewel", "f");
-   LegendTheoryOnly2.AddEntry(&KorinnaNoRecoilC00[0], "Jewel w/o recoil", "f");
-   LegendTheoryOnly2.AddEntry(&SCET[0], "SCET w/o coll. E-loss", "f");
+   LegendStart = DoData ? 0.35 : 0.07;
+   TLegend LegendTheoryAll2(LegendStart, 0.03, LegendStart + 0.41, 0.3);
+   LegendTheoryAll2.SetTextFont(42);
+   LegendTheoryAll2.SetTextSize(0.06);
+   LegendTheoryAll2.SetFillStyle(0);
+   LegendTheoryAll2.SetBorderSize(0);
+   LegendTheoryAll2.AddEntry(&SCET[0], "SCET w/o coll. E-loss", "f");
+   LegendTheoryAll2.AddEntry(&DanielWake[0], "HYBRID w/ wake", "lf");
+   LegendTheoryAll2.AddEntry(&DanielNoWake[0], "HYBRID w/o wake", "lf");
+   LegendTheoryAll2.AddEntry(&DanielOnlyPos[0], "HYBRID w/ pos wake", "lf");
    
-   TLegend LegendTheoryOnly3(0.07, 0.03, 0.47, 0.25);
-   LegendTheoryOnly3.SetTextFont(42);
-   LegendTheoryOnly3.SetTextSize(0.06);
-   LegendTheoryOnly3.SetFillStyle(0);
-   LegendTheoryOnly3.SetBorderSize(0);
-   LegendTheoryOnly3.AddEntry(&DanielWake[0], "Hybrid w/ wake", "f");
-   LegendTheoryOnly3.AddEntry(&DanielNoWake[0], "Hybrid w/o wake", "f");
-   LegendTheoryOnly3.AddEntry(&DanielOnlyPos[0], "Hybrid w/ partial response", "f");
+   TLegend LegendTheoryAll3(0.03, 0.03, 0.44, 0.25);
+   LegendTheoryAll3.SetTextFont(42);
+   LegendTheoryAll3.SetTextSize(0.06);
+   LegendTheoryAll3.SetFillStyle(0);
+   LegendTheoryAll3.SetBorderSize(0);
+   if(DoData)  LegendTheoryAll3.AddEntry(&HC00RAASys[0], "CMS", "plf");
+   else        LegendTheoryAll3.AddEntry("", "", "");
+   LegendTheoryAll3.AddEntry(&KorinnaC00[0], "JEWEL", "f");
+   LegendTheoryAll3.AddEntry(&KorinnaNoRecoilC00[0], "JEWEL w/o recoil", "f");
    
-   TLegend LegendTheoryOnly4(0.07, 0.03, 0.47, 0.25);
-   LegendTheoryOnly4.SetTextFont(42);
-   LegendTheoryOnly4.SetTextSize(0.06);
-   LegendTheoryOnly4.SetFillStyle(0);
-   LegendTheoryOnly4.SetBorderSize(0);
-   LegendTheoryOnly4.AddEntry("", "", "");
-   LegendTheoryOnly4.AddEntry(&PyquenC00[0], "Pyquen", "f");
-   LegendTheoryOnly4.AddEntry(&PyquenWideRadC00[0], "Pyquen w/ wide rad.", "f");
+   TLegend LegendTheoryAll4(0.55, 0.03, 0.96, 0.25);
+   LegendTheoryAll4.SetTextFont(42);
+   LegendTheoryAll4.SetTextSize(0.06);
+   LegendTheoryAll4.SetFillStyle(0);
+   LegendTheoryAll4.SetBorderSize(0);
+   LegendTheoryAll4.AddEntry(&MartiniC00[0], "MARTINI", "f");
+   LegendTheoryAll4.AddEntry(&IvanC00[0], "Li and Vitev", "f");
+   LegendTheoryAll4.AddEntry(&Felix[0], "Factorization", "f");
    
-   // For individual theory-data plots.
-   TLegend LegendData(0.1, 0.03, 0.5, 0.28);
-   LegendData.SetTextFont(42);
-   LegendData.SetTextSize(0.07);
-   LegendData.SetFillStyle(0);
-   LegendData.SetBorderSize(0);
-   LegendData.AddEntry("", "", "");
-   LegendData.AddEntry("", "", "");
-   LegendData.AddEntry(&HC00RAASys[0], "CMS 0-10%", "plf");
+   TLegend LegendTheoryAll5(0.07, 0.03, 0.48, 0.25);
+   LegendTheoryAll5.SetTextFont(42);
+   LegendTheoryAll5.SetTextSize(0.06);
+   LegendTheoryAll5.SetFillStyle(0);
+   LegendTheoryAll5.SetBorderSize(0);
+   LegendTheoryAll5.AddEntry(&Yacine[0], "Coherent antenna BDMPS", "lf");
+   LegendTheoryAll5.AddEntry(&LBTNoResponse[0], "LBT w/ showers only", "lf");
+   LegendTheoryAll5.AddEntry(&LBTResponse[0], "LBT w/ med. response", "lf");
    
-   // For hybrid plots.
-   TLegend LegendHybrid1(0.1, 0.03, 0.5, 0.28);
-   LegendHybrid1.SetTextFont(42);
-   LegendHybrid1.SetTextSize(0.07);
-   LegendHybrid1.SetFillStyle(0);
-   LegendHybrid1.SetBorderSize(0);
-   LegendHybrid1.AddEntry(&DanielWake[0], "Hybrid w/ wake", "f");
-   LegendHybrid1.AddEntry(&DanielNoWake[0], "Hybrid w/o wake", "f");
-   LegendHybrid1.AddEntry(&DanielOnlyPos[0], "Hybrid w/ partial response", "f");
+   TLegend LegendTheoryAll6(0.07, 0.03, 0.48, 0.25);
+   LegendTheoryAll6.SetTextFont(42);
+   LegendTheoryAll6.SetTextSize(0.06);
+   LegendTheoryAll6.SetFillStyle(0);
+   LegendTheoryAll6.SetBorderSize(0);
+   LegendTheoryAll6.AddEntry("", "", "");
+   LegendTheoryAll6.AddEntry(&PyquenC00[0], "PYQUEN", "f");
+   LegendTheoryAll6.AddEntry(&PyquenWideRadC00[0], "PYQUEN w/ wide rad.", "f");
    
-   // For jewel plots.
-   TLegend LegendJewel1(0.1, 0.03, 0.5, 0.28);
-   LegendJewel1.SetTextFont(42);
-   LegendJewel1.SetTextSize(0.07);
-   LegendJewel1.SetFillStyle(0);
-   LegendJewel1.SetBorderSize(0);
-   LegendJewel1.AddEntry("", "", "");
-   LegendJewel1.AddEntry(&KorinnaC00[0], "0-10%", "f");
-   LegendJewel1.AddEntry(&KorinnaC01[0], "10-30%", "f");
+   TLegend LegendTheoryAll7(0.07, 0.03, 0.48, 0.25);
+   LegendTheoryAll7.SetTextFont(42);
+   LegendTheoryAll7.SetTextSize(0.06);
+   LegendTheoryAll7.SetFillStyle(0);
+   LegendTheoryAll7.SetBorderSize(0);
+   LegendTheoryAll7.AddEntry("", "", "");
+   LegendTheoryAll7.AddEntry("", "", "");
+   LegendTheoryAll7.AddEntry(&CCNUNoHydro[0], "CCNU coupled jet-fluid w/o hydro", "pl");
    
-   TLegend LegendJewel2(0.53, 0.03, 0.95, 0.28);
-   LegendJewel2.SetTextFont(42);
-   LegendJewel2.SetTextSize(0.07);
-   LegendJewel2.SetFillStyle(0);
-   LegendJewel2.SetBorderSize(0);
-   LegendJewel2.AddEntry("", "", "");
-   LegendJewel2.AddEntry(&KorinnaC02[0], "30-50%", "f");
-   LegendJewel2.AddEntry(&KorinnaC03[0], "50-90%", "f");
-   
-   TLegend LegendJewel3(0.1, 0.03, 0.5, 0.28);
-   LegendJewel3.SetTextFont(42);
-   LegendJewel3.SetTextSize(0.07);
-   LegendJewel3.SetFillStyle(0);
-   LegendJewel3.SetBorderSize(0);
-   LegendJewel3.AddEntry("", "", "");
-   LegendJewel3.AddEntry(&KorinnaNoRecoilC00[0], "No recoil 0-10%", "f");
-   LegendJewel3.AddEntry(&KorinnaNoRecoilC01[0], "No recoil 10-30%", "f");
-   
-   TLegend LegendJewel4(0.1, 0.03, 0.5, 0.28);
-   LegendJewel4.SetTextFont(42);
-   LegendJewel4.SetTextSize(0.07);
-   LegendJewel4.SetFillStyle(0);
-   LegendJewel4.SetBorderSize(0);
-   LegendJewel4.AddEntry("", "", "");
-   LegendJewel4.AddEntry(&KorinnaNoRecoilC02[0], "No recoil 30-50%", "f");
-   LegendJewel4.AddEntry(&KorinnaNoRecoilC03[0], "No recoil 50-90%", "f");
-   
-   // For pyquen plots.
-   TLegend LegendPyquen1(0.1, 0.03, 0.5, 0.28);
-   LegendPyquen1.SetTextFont(42);
-   LegendPyquen1.SetTextSize(0.07);
-   LegendPyquen1.SetFillStyle(0);
-   LegendPyquen1.SetBorderSize(0);
-   LegendPyquen1.AddEntry("", "", "");
-   LegendPyquen1.AddEntry(&PyquenC00[0], "Pyquen 0-10%", "f");
-   LegendPyquen1.AddEntry(&PyquenWideRadC00[0], "Pyquen w/ wide rad. 0-10%", "f");
-   
-   // For Ivan plots.
-   TLegend LegendIvan1(0.1, 0.03, 0.5, 0.28);
-   LegendIvan1.SetTextFont(42);
-   LegendIvan1.SetTextSize(0.07);
-   LegendIvan1.SetFillStyle(0);
-   LegendIvan1.SetBorderSize(0);
-   LegendIvan1.AddEntry(&IvanC00[0], "Li and Vitev 0-10%", "f");
-   LegendIvan1.AddEntry(&IvanC01[0], "Li and Vitev 10-30%", "f");
-   LegendIvan1.AddEntry(&IvanC02[0], "Li and Vitev 30-50%", "f");
-   
-   // For SCET plots.
-   TLegend LegendSCET1(0.1, 0.03, 0.5, 0.28);
-   LegendSCET1.SetTextFont(42);
-   LegendSCET1.SetTextSize(0.07);
-   LegendSCET1.SetFillStyle(0);
-   LegendSCET1.SetBorderSize(0);
-   LegendSCET1.AddEntry("", "", "");
-   LegendSCET1.AddEntry("", "", "");
-   LegendSCET1.AddEntry(&SCET[0], "SCET w/o coll. E-loss", "f");
+   TLegend LegendTheoryAll8(0.07, 0.03, 0.48, 0.25);
+   LegendTheoryAll8.SetTextFont(42);
+   LegendTheoryAll8.SetTextSize(0.06);
+   LegendTheoryAll8.SetFillStyle(0);
+   LegendTheoryAll8.SetBorderSize(0);
+   LegendTheoryAll8.AddEntry("", "", "");
+   LegendTheoryAll8.AddEntry("", "", "");
+   LegendTheoryAll8.AddEntry(&CCNUHydro[0], "CCNU coupled jet-fluid w/ hydro", "pl");
    
    Latex.SetTextFont(42);
-   Latex.SetTextSize(0.07);
+   if(Pres) Latex.SetTextSize(0.09);
+   else     Latex.SetTextSize(0.07);
    Latex.SetTextAlign(31);
    Latex.SetTextAngle(0);
    
    for(int i = 0; i < NPad; i++)
    {
+      LBTNoResponse[i].SetLineWidth(2.0);
+      LBTResponse[i].SetLineWidth(2.0);
+      Yacine[i].SetLineWidth(2.0);
+      DanielWake[i].SetLineWidth(2.0);
+      DanielNoWake[i].SetLineWidth(2.0);
+      DanielOnlyPos[i].SetLineWidth(2.0);
+      CCNUHydro[i].SetLineWidth(2.0);
+      CCNUNoHydro[i].SetLineWidth(2.0);
+      
+      CCNUHydro[i].SetMarkerStyle(21);
+      CCNUHydro[i].SetMarkerColor(kBlue - 7);
+      CCNUHydro[i].SetMarkerSize(2.2);
+      CCNUNoHydro[i].SetMarkerStyle(21);
+      CCNUNoHydro[i].SetMarkerColor(kViolet + 2);
+      CCNUNoHydro[i].SetMarkerSize(2.2);
+      
       P[i]->cd();
       HWorld.Draw("axis");
-      if(DoTheory || DoHybrid) DanielWake[i].Draw("3");
-      if(DoTheory || DoHybrid) DanielNoWake[i].Draw("3");
-      if(DoTheory || DoHybrid) DanielOnlyPos[i].Draw("3");
-      if(DoTheory)             Felix[i].Draw("5");
-      if(DoTheory || DoJewel)  KorinnaC00[i].Draw("5");
-      if(DoJewel)              KorinnaC01[i].Draw("5");
-      if(DoJewel)              KorinnaC02[i].Draw("5");
-      if(DoJewel)              KorinnaC03[i].Draw("5");
-      if(DoTheory || DoJewel)  KorinnaNoRecoilC00[i].Draw("5");
-      if(DoJewel)              KorinnaNoRecoilC01[i].Draw("5");
-      if(DoJewel)              KorinnaNoRecoilC02[i].Draw("5");
-      if(DoJewel)              KorinnaNoRecoilC03[i].Draw("5");
-      if(DoTheory || DoPyquen) PyquenC00[i].Draw("5");
-      if(DoTheory || DoPyquen) PyquenWideRadC00[i].Draw("5");
+      if(Do0to10MC || Do0to10All)       DanielWake[i].Draw("3");
+      if(Do0to10MC || Do0to10All)       DanielWake[i].Draw("lX");
+      if(Do0to10MC || Do0to10All)       DanielNoWake[i].Draw("3");
+      if(Do0to10MC || Do0to10All)       DanielNoWake[i].Draw("lX");
+      if(Do0to10MC || Do0to10All)       DanielOnlyPos[i].Draw("3");
+      if(Do0to10MC || Do0to10All)       DanielOnlyPos[i].Draw("lX");
+      if(Do0to10MC || Do0to10All)       CCNUHydro[i].Draw("p");
+      if(Do0to10MC || Do0to10All)       CCNUNoHydro[i].Draw("p");
+      if(Do0to10MC || Do0to10All)       MartiniC00[i].Draw("5");
+      if(Do0to10Calc || Do0to10All)     Felix[i].Draw("5");
+      if(Do0to10Gen || Do0to10All)      KorinnaC00[i].Draw("5");
+      if(Do0to10Gen || Do0to10All)      KorinnaNoRecoilC00[i].Draw("5");
+      if(Do0to10Gen || Do0to10All)      PyquenC00[i].Draw("5");
+      if(Do0to10Gen || Do0to10All)      PyquenWideRadC00[i].Draw("5");
+      if(Do10to30)   KorinnaC01[i].Draw("5");
+      if(Do10to30)   KorinnaNoRecoilC01[i].Draw("5");
+      if(Do10to30)   MartiniC01[i].Draw("5");
+      if(Do30to50)   KorinnaC02[i].Draw("5");
+      if(Do30to50)   KorinnaNoRecoilC02[i].Draw("5");
+      if(Do30to50)   MartiniC02[i].Draw("5");
+      if(Do50to90)   KorinnaC03[i].Draw("5");
+      if(Do50to90)   KorinnaNoRecoilC03[i].Draw("5");
       
       if(i == 0 || i == 2 || i == 4) // Ivan only has R = 2, 4, 8
       {
-         if(DoTheory || DoIvan)   IvanC00[i].Draw("3");
-         if(DoIvan)               IvanC01[i].Draw("3");
-         if(DoIvan)               IvanC02[i].Draw("3");
+         if(Do0to10Calc || Do0to10All)     IvanC00[i].Draw("3");
+         if(Do10to30)   IvanC01[i].Draw("3");
+         if(Do30to50)   IvanC02[i].Draw("3");
       }
       
-      if(i != 1) // SCET does not have R = 3
+      if(i != 1) // SCET and LBT do not have R = 3
       {
-         if(DoTheory || DoSCET)   SCET[i].Draw("3");
+         if(Do0to10Calc || Do0to10All)     SCET[i].Draw("3");
+         if(Do0to10Calc || Do0to10All)     Yacine[i].Draw("lX");
+         if(Do0to10MC || Do0to10All)       LBTNoResponse[i].Draw("3");
+         if(Do0to10MC || Do0to10All)       LBTNoResponse[i].Draw("lX");
+         if(Do0to10MC || Do0to10All)       LBTResponse[i].Draw("3");
+         if(Do0to10MC || Do0to10All)       LBTResponse[i].Draw("lX");
       }
       
-      if(DoData)              HC00RAASys[i].Draw("same e2");
-      if(OnlyData)            HC01RAASys[i].Draw("same e2");
-      if(OnlyData)            HC02RAASys[i].Draw("same e2");
-      if(OnlyData)            HC03RAASys[i].Draw("same e2");
-      if(DoData)              HC00RAA[i].Draw("same");
-      if(OnlyData)            HC01RAA[i].Draw("same");
-      if(OnlyData)            HC02RAA[i].Draw("same");
-      if(OnlyData)            HC03RAA[i].Draw("same");
-      if(DoData)              DrawLumiTAA(Lumi, TAA, XMin, XMax);
+      if(OnlyData || (DoData && Do0to10))    HC00RAASys[i].Draw("same e2");
+      if(OnlyData || (DoData && Do10to30))   HC01RAASys[i].Draw("same e2");
+      if(OnlyData || (DoData && Do30to50))   HC02RAASys[i].Draw("same e2");
+      if(OnlyData || (DoData && Do50to90))   HC03RAASys[i].Draw("same e2");
+      if(OnlyData || (DoData && Do0to10))    HC00RAA[i].Draw("same");
+      if(OnlyData || (DoData && Do10to30))   HC01RAA[i].Draw("same");
+      if(OnlyData || (DoData && Do30to50))   HC02RAA[i].Draw("same");
+      if(OnlyData || (DoData && Do50to90))   HC03RAA[i].Draw("same");
+      if(OnlyData)            DrawLumiTAA(Lumi, TAA, XMin, XMax, "All");
+      if(Do0to10 && DoData)   DrawLumiTAA(Lumi, TAA, XMin, XMax, "0to10");
+      if(Do10to30 && DoData)  DrawLumiTAA(Lumi, TAA, XMin, XMax, "10to30");
+      if(Do30to50 && DoData)  DrawLumiTAA(Lumi, TAA, XMin, XMax, "30to50");
+      if(Do50to90 && DoData)  DrawLumiTAA(Lumi, TAA, XMin, XMax, "50to90");
       GLine.Draw("l");
    }
    
    P[0]->cd();
    Latex.SetTextAlign(11);
-   Latex.DrawLatex(0.08, 0.1, "anti-k_{T}, |#eta_{jet}| < 2");
+   if(Do0to10All && Pres)
+   {
+      Latex.SetTextSize(0.07);
+      Latex.DrawLatex(0.08, 0.9, "anti-k_{T}, |#eta_{jet}| < 2");
+      Latex.SetTextSize(0.09);
+   }
+   if(Do0to10All && !Pres)  Latex.DrawLatex(0.08, 0.9, "anti-k_{T}, |#eta_{jet}| < 2");
+   if(!Do0to10All)          Latex.DrawLatex(0.08, 0.1, "anti-k_{T}, |#eta_{jet}| < 2");
    Latex.SetTextAlign(31);
-   Latex.DrawLatex(0.92, 0.9, "R = 0.2");
+   if(Pres) Latex.DrawLatex(0.92, 0.88, "R = 0.2");
+   else     Latex.DrawLatex(0.92, 0.9, "R = 0.2");
    Latex.SetTextAlign(11);
-   if(DoData && !OnlyData) LegendTheory1.Draw();
-   if(DoTheory && !DoData) LegendTheoryOnly1.Draw();
-   
+   if(DoData && DoTheory && !Do0to10All)     LegendTheoryData.Draw();
+   if(DoData && Do0to10All)                  LegendTheoryAll1.Draw();
+   if(Do0to10All) LegendTheoryAll2.Draw();
+      
    P[1]->cd();
    Latex.SetTextAlign(31);
-   Latex.DrawLatex(0.92, 0.9, "R = 0.3");
-   if(DoTheory && DoData)  LegendTheory2.Draw();
-   if(DoTheory && DoData)  LegendTheory3.Draw();
-   if(DoTheory && !DoData) LegendTheoryOnly2.Draw();
-   if(DoJewel)             LegendJewel1.Draw();
-   if(DoJewel)             LegendJewel2.Draw();
+   if(Pres) Latex.DrawLatex(0.92, 0.88, "R = 0.3");
+   else     Latex.DrawLatex(0.92, 0.9, "R = 0.3");
+   if(DoTheory && !Do0to10All) LegendTheory1.Draw();
+   if(Do0to10All) LegendTheoryAll3.Draw();
+   if(Do0to10All) LegendTheoryAll4.Draw();
    
    P[2]->cd();
    Latex.SetTextAlign(31);
-   Latex.DrawLatex(0.92, 0.9, "R = 0.4");
-   if(DoTheory && DoData)  LegendTheory4.Draw();
-   if(DoTheory && !DoData) LegendTheoryOnly3.Draw();
-   if(DoJewel)             LegendJewel3.Draw();
+   if(Pres) Latex.DrawLatex(0.92, 0.88, "R = 0.4");
+   else     Latex.DrawLatex(0.92, 0.9, "R = 0.4");
+   if(DoTheory && !Do0to10All) LegendTheory2.Draw();
+   if(Do0to10All) LegendTheoryAll5.Draw();
    
    P[3]->cd();
    Latex.SetTextAlign(31);
-   Latex.DrawLatex(0.92, 0.9, "R = 0.6");
+   if(Pres) Latex.DrawLatex(0.92, 0.88, "R = 0.6");
+   else     Latex.DrawLatex(0.92, 0.9, "R = 0.6");
    if(OnlyData) LegendDataOnly1.Draw();
    if(OnlyData) LegendDataOnly2.Draw();
-   if(DoTheory && DoData)  LegendTheory5.Draw();
-   if(DoTheory && !DoData) LegendTheoryOnly4.Draw();
-   if(DoHybrid)            LegendHybrid1.Draw();
-   if(DoJewel)             LegendJewel4.Draw();
-   if(DoPyquen)            LegendPyquen1.Draw();
-   if(DoIvan)              LegendIvan1.Draw();
-   if(DoSCET)              LegendSCET1.Draw();
+   if(Do0to10All) LegendTheoryAll6.Draw();
+   if(Do0to10MC)  LegendTheory3.Draw();
    
    P[4]->cd();
    Latex.SetTextAlign(31);
-   Latex.DrawLatex(0.92, 0.9, "R = 0.8");
+   if(Pres) Latex.DrawLatex(0.92, 0.88, "R = 0.8");
+   else     Latex.DrawLatex(0.92, 0.9, "R = 0.8");
    if(OnlyData) LegendDataOnly3.Draw();
    if(OnlyData) LegendDataOnly4.Draw();
-   if(DoTheory && DoData)  LegendTheory6.Draw();
-   if(!DoTheory && DoData && !OnlyData)   LegendData.Draw();
+   if(Do0to10All) LegendTheoryAll7.Draw();
+   
+   Latex.SetTextFont(62);
+   Latex.SetTextAlign(21);
+   if(Pres) Latex.SetTextSize(0.10);
+   else     Latex.SetTextSize(0.08);
+   if(Do0to10 && !Do0to10All)   Latex.DrawLatex(0.5, 0.08, "0-10%");
+   if(Do10to30)  Latex.DrawLatex(0.5, 0.08, "10-30%");
+   if(Do30to50)  Latex.DrawLatex(0.5, 0.08, "30-50%");
+   if(Do50to90)  Latex.DrawLatex(0.5, 0.08, "50-90%");
+   Latex.SetTextFont(42);
+   if(Pres) Latex.SetTextSize(0.09);
+   else     Latex.SetTextSize(0.07);
+   Latex.SetTextAlign(31);
    
    P[5]->cd();
    Latex.SetTextAlign(31);
-   Latex.DrawLatex(0.92, 0.9, "R = 1.0");
-      if(OnlyData) LegendDataOnly5.Draw();
+   if(Pres) Latex.DrawLatex(0.92, 0.88, "R = 1.0");
+   else     Latex.DrawLatex(0.92, 0.9, "R = 1.0");
+   if(OnlyData)   LegendDataOnly5.Draw();
+   if(Do0to10MC)  LegendTheory4.Draw();
+   if(Do0to10All) LegendTheoryAll8.Draw();
 
    string OutputBase = "";
-   if(DoData)    OutputBase = "Data";
-   if(DoTheory)   OutputBase += "Theory";
-   if(DoJewel)    OutputBase += "Jewel";
-   if(DoPyquen)   OutputBase += "Pyquen";
-   if(DoHybrid)   OutputBase += "Hybrid";
-   if(DoIvan)     OutputBase += "Ivan";
-   if(DoSCET)     OutputBase += "SCET";
+   if(Pres)          OutputBase += "Pres_";
+   else              OutputBase += "Paper_";
+   if(Prelim)        OutputBase += "Prelim_";
+   if(DoData)        OutputBase += "Data";
+   if(Do0to10All)    OutputBase += "Theory0to10";
+   if(Do0to10MC)     OutputBase += "MC0to10";
+   if(Do0to10Calc)   OutputBase += "Calc0to10";
+   if(Do0to10Gen)    OutputBase += "Gen0to10";
+   if(Do10to30)      OutputBase += "Theory10to30";
+   if(Do30to50)      OutputBase += "Theory30to50";
+   if(Do50to90)      OutputBase += "Theory50to90";
    OutputBase += "RAA";
 
    Canvas.SaveAs((OutputBase + ".pdf").c_str());
-   Canvas.SaveAs((OutputBase + ".png").c_str());
-   Canvas.SaveAs((OutputBase + ".C").c_str());
+//   Canvas.SaveAs((OutputBase + ".png").c_str());
+//   Canvas.SaveAs((OutputBase + ".C").c_str());
    
    for(int i = 0; i < NPad; i++)
    {
@@ -591,10 +646,11 @@ void SetPad(TPad &P)
    P.Draw();
 }
 
-void SetAxis(TGaxis &A)
+void SetAxis(TGaxis &A, bool Pres)
 {
    A.SetLabelFont(42);
-   A.SetLabelSize(0.030);
+   if(Pres) A.SetLabelSize(0.040);
+   else     A.SetLabelSize(0.030);
    A.SetMaxDigits(6);
    A.SetMoreLogLabels();
    A.SetNoExponent();
@@ -667,7 +723,7 @@ void Rebin(TH1D &H1, TH1D &H2)
    }
 }
 
-void DrawLumiTAA(double Lumi, double TAA[4], double XMin, double XMax)
+void DrawLumiTAA(double Lumi, double TAA[4], double XMin, double XMax, string type)
 {
    double Offset = 0.06;
    double Size = 0.08;
@@ -685,7 +741,7 @@ void DrawLumiTAA(double Lumi, double TAA[4], double XMin, double XMax)
    X2 = exp(x2 * (log(XMax) - log(XMin)) + log(XMin));
    Box.DrawBox(X1, 1 - Lumi, X2, 1 + Lumi);
 
-   for(int i = 0; i < 4; i++)
+   if(type == "All") for(int i = 0; i < 4; i++)
    {
       if(TAA[i] < 0)
          continue;
@@ -696,6 +752,22 @@ void DrawLumiTAA(double Lumi, double TAA[4], double XMin, double XMax)
       X1 = exp(x1 * (log(XMax) - log(XMin)) + log(XMin));
       X2 = exp(x2 * (log(XMax) - log(XMin)) + log(XMin));
       Box.DrawBox(X1, 1 - TAA[i], X2, 1 + TAA[i]);
+   }
+   else
+   {
+      int index;
+      
+      if(type == "0to10")  index = 0;
+      if(type == "10to30") index = 1;
+      if(type == "30to50") index = 2;
+      if(type == "50to90") index = 3;
+      
+      Box.SetFillColor(Color[index]);
+      x1 = Offset - Size * 0.5 + Grid;
+      x2 = Offset + Size * 0.5 + Grid;
+      X1 = exp(x1 * (log(XMax) - log(XMin)) + log(XMin));
+      X2 = exp(x2 * (log(XMax) - log(XMin)) + log(XMin));
+      Box.DrawBox(X1, 1 - TAA[index], X2, 1 + TAA[index]);
    }
 }
 

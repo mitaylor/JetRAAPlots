@@ -289,9 +289,9 @@ int main(int argc, char *argv[])
    if(Do0to10Calc || Do0to10All)     Legend1.AddEntry(&SCET[0], "SCET w/o coll. E-loss", "f");
    if(Do0to10Calc || Do0to10All)     Legend1.AddEntry(&IvanC00[0], "Li and Vitev", "f");
    if(Do0to10Calc || Do0to10All)     Legend1.AddEntry(&Yacine[0], "Coherent antenna BDMPS", "lf");
-   if(Do0to10MC || Do0to10All)       Legend1.AddEntry(&DanielWake[0], "HYBRID w/ wake", "lf");
-   if(Do0to10MC || Do0to10All)       Legend1.AddEntry(&DanielNoWake[0], "HYBRID w/o wake", "lf");
-   if(Do0to10MC || Do0to10All)       Legend1.AddEntry(&DanielOnlyPos[0], "HYBRID w/ pos wake", "lf");
+   if(Do0to10MC || Do0to10All)       Legend1.AddEntry(&DanielWake[0], "Hybrid w/ wake", "lf");
+   if(Do0to10MC || Do0to10All)       Legend1.AddEntry(&DanielNoWake[0], "Hybrid w/o wake", "lf");
+   if(Do0to10MC || Do0to10All)       Legend1.AddEntry(&DanielOnlyPos[0], "Hybrid w/ pos wake", "lf");
    if(Do0to10MC || Do0to10All)       Legend1.AddEntry(&MartiniC00[0], "MARTINI", "lf");
 //   if(Do0to10MC || Do0to10All)       Legend1.AddEntry(&CCNUHydro[0], "CCNU coupled jet-fluid w/ hydro", "f");
 //   if(Do0to10MC || Do0to10All)       Legend1.AddEntry(&CCNUNoHydro[0], "CCNU coupled jet-fluid w/o hydro", "f");

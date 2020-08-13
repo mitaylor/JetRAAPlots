@@ -1,3 +1,4 @@
+
 default: TestRun
 
 TestRun: Execute
@@ -31,5 +32,11 @@ TestRun: Execute
 	./Execute --TheoryType 30to50 --Data true --Pres false --Prelim false
 	./Execute --TheoryType 50to90 --Data true --Pres false --Prelim false
 
+Files: GetValues
+	./GetValues
+
 Execute: MakePlotRAA.cpp
 	g++ -rpath ${ROOTSYS}/lib MakePlotRAA.cpp -o Execute `root-config --cflags --glibs`
+
+GetValues: GetValues.cpp
+	g++ -rpath ${ROOTSYS}/lib GetValues.cpp -o GetValues `root-config --cflags --glibs`

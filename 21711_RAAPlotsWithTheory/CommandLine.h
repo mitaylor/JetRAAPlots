@@ -52,9 +52,9 @@ public:
    bool GetBool(std::string Key, bool Default);
    bool StringToBool(string String);
    std::string GetSelf();
-   std::vector<std::string> Parse(std::string Input, char Delimiter = ',');
-   std::vector<int> ParseInt(std::string Input, char Delimiter = ',');
-   std::vector<double> ParseDouble(std::string Input, char Delimiter = ',');
+   static std::vector<std::string> Parse(std::string Input, char Delimiter = ',');
+   static std::vector<int> ParseInt(std::string Input, char Delimiter = ',');
+   static std::vector<double> ParseDouble(std::string Input, char Delimiter = ',');
 };
 
 CommandLine::CommandLine(int argc, char *argv[])

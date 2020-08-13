@@ -347,9 +347,9 @@ int main(int argc, char *argv[])
    if(Do0to10Calc && DoData)     LegendTheory2.AddEntry(&SCET[0], "SCET w/o coll. E-loss", "f");
    if(Do0to10Calc && !DoData)    LegendTheory2.AddEntry("", "", "");
    if(Do0to10Calc && !DoData)    LegendTheory2.AddEntry("", "", "");
-   if(Do0to10MC)       LegendTheory2.AddEntry(&DanielWake[0], "HYBRID w/ wake", "lf");
-   if(Do0to10MC)       LegendTheory2.AddEntry(&DanielNoWake[0], "HYBRID w/o wake", "lf");
-   if(Do0to10MC)       LegendTheory2.AddEntry(&DanielOnlyPos[0], "HYBRID w/ pos wake", "lf");
+   if(Do0to10MC)       LegendTheory2.AddEntry(&DanielWake[0], "Hybrid w/ wake", "lf");
+   if(Do0to10MC)       LegendTheory2.AddEntry(&DanielNoWake[0], "Hybrid w/o wake", "lf");
+   if(Do0to10MC)       LegendTheory2.AddEntry(&DanielOnlyPos[0], "Hybrid w/ pos wake", "lf");
    if(Do0to10Gen)      LegendTheory2.AddEntry("", "", "");
    if(Do0to10Gen)      LegendTheory2.AddEntry(&PyquenC00[0], "PYQUEN", "f");
    if(Do0to10Gen)      LegendTheory2.AddEntry(&PyquenWideRadC00[0], "PYQUEN w/ wide rad.", "f");
@@ -376,8 +376,8 @@ int main(int argc, char *argv[])
    LegendTheory4.SetFillStyle(0);
    LegendTheory4.SetBorderSize(0);
    LegendTheory4.AddEntry("", "", "");
-   LegendTheory4.AddEntry(&CCNUHydro[0], "CCNU coupled jet-fluid w/ hydro", "pl");
-   LegendTheory4.AddEntry(&CCNUNoHydro[0], "CCNU coupled jet-fluid w/o hydro", "pl");
+   LegendTheory4.AddEntry(&CCNUHydro[0], "CCNU coupled jet fluid w/ hydro", "pl");
+   LegendTheory4.AddEntry(&CCNUNoHydro[0], "CCNU coupled jet fluid w/o hydro", "pl");
 
    // For the theory grand compilation.
    TLegend LegendTheoryAll1(0.07, 0.03, 0.47, 0.23);
@@ -396,9 +396,9 @@ int main(int argc, char *argv[])
    LegendTheoryAll2.SetFillStyle(0);
    LegendTheoryAll2.SetBorderSize(0);
    LegendTheoryAll2.AddEntry(&SCET[0], "SCET w/o coll. E-loss", "f");
-   LegendTheoryAll2.AddEntry(&DanielWake[0], "HYBRID w/ wake", "lf");
-   LegendTheoryAll2.AddEntry(&DanielNoWake[0], "HYBRID w/o wake", "lf");
-   LegendTheoryAll2.AddEntry(&DanielOnlyPos[0], "HYBRID w/ pos wake", "lf");
+   LegendTheoryAll2.AddEntry(&DanielWake[0], "Hybrid w/ wake", "lf");
+   LegendTheoryAll2.AddEntry(&DanielNoWake[0], "Hybrid w/o wake", "lf");
+   LegendTheoryAll2.AddEntry(&DanielOnlyPos[0], "Hybrid w/ pos wake", "lf");
    
    TLegend LegendTheoryAll3(0.03, 0.03, 0.44, 0.25);
    LegendTheoryAll3.SetTextFont(42);
@@ -444,7 +444,7 @@ int main(int argc, char *argv[])
    LegendTheoryAll7.SetBorderSize(0);
    LegendTheoryAll7.AddEntry("", "", "");
    LegendTheoryAll7.AddEntry("", "", "");
-   LegendTheoryAll7.AddEntry(&CCNUNoHydro[0], "CCNU coupled jet-fluid w/o hydro", "pl");
+   LegendTheoryAll7.AddEntry(&CCNUNoHydro[0], "CCNU coupled jet fluid w/o hydro", "pl");
    
    TLegend LegendTheoryAll8(0.07, 0.03, 0.48, 0.25);
    LegendTheoryAll8.SetTextFont(42);
@@ -453,7 +453,7 @@ int main(int argc, char *argv[])
    LegendTheoryAll8.SetBorderSize(0);
    LegendTheoryAll8.AddEntry("", "", "");
    LegendTheoryAll8.AddEntry("", "", "");
-   LegendTheoryAll8.AddEntry(&CCNUHydro[0], "CCNU coupled jet-fluid w/ hydro", "pl");
+   LegendTheoryAll8.AddEntry(&CCNUHydro[0], "CCNU coupled jet fluid w/ hydro", "pl");
    
    Latex.SetTextFont(42);
    if(Pres) Latex.SetTextSize(0.09);
